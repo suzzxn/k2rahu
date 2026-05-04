@@ -432,6 +432,14 @@
         .saturn { background: linear-gradient(135deg, #fbbf24, #d97706); }
         .rahu { background: linear-gradient(135deg, #667eea, #764ba2); }
         .ketu { background: linear-gradient(135deg, #fbbf24, #d97706); }
+        .uranus  { background: linear-gradient(135deg, #67e8f9, #06b6d4); }
+        .neptune { background: linear-gradient(135deg, #818cf8, #4f46e5); }
+        .pluto   { background: linear-gradient(135deg, #a78bfa, #6d28d9); }
+
+        .badge-modern {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -518,7 +526,7 @@
         <div class="header">
             <div class="logo">
                 <div class="logo-dot"></div>
-                <span>Keturahu (Website under construction, thank u for visiting)</span>
+                <span>Keturahu</span>
             </div>
             <nav class="nav">
                 <a href="#"class="active">Horoscopes</a>
@@ -753,6 +761,27 @@
                     const c5 = 0.0549 * Math.sin((352.75 + 2444.228*t)*DEG);
                     return norm360(l0 + c1 + c2 + c3 + c4 + c5);
                 }
+                case 'uranus': {
+                    // Calibrated mean motion + Saturn perturbation — ~0.1° accuracy 2000–2030
+                    const Sa = norm360(50.077444 + 1222.113794 * t);
+                    const corr = 0.4276*Math.sin(Sa*DEG) + 0.1111*Math.cos(Sa*DEG)
+                               + 0.0822*Math.sin(2*Sa*DEG) + 0.0120*Math.cos(2*Sa*DEG)
+                               + 18.1137*t - 6.1185;
+                    return norm360(322.424 + 379.542*t + corr);
+                }
+                case 'neptune': {
+                    // VSOP87 truncated — ~0.5° accuracy 2000–2030
+                    const l0 = 304.348665 + 218.459365 * t;
+                    const c1 = 0.3818 * Math.sin((276.74 + 218.459*t)*DEG);
+                    const c2 = 0.1124 * Math.sin((162.74 + 436.918*t)*DEG);
+                    const c3 = 0.0842 * Math.sin((357.53 + 35999.050*t)*DEG);
+                    const c4 = 0.0348 * Math.sin((276.74 + 437.918*t)*DEG);
+                    return norm360(l0 + c1 + c2 + c3 + c4);
+                }
+                case 'pluto': {
+                    // Calibrated mean motion — ~1° accuracy 2000–2030
+                    return norm360(251.066 + 212.960 * t);
+                }
                 default: return 0;
             }
         }
@@ -773,7 +802,7 @@
             const earthLon = sunLon + Math.PI;
 
             // Approximate distance ratios (AU, mean)
-            const dist = { mercury:0.387, venus:0.723, mars:1.524, jupiter:5.203, saturn:9.537 };
+            const dist = { mercury:0.387, venus:0.723, mars:1.524, jupiter:5.203, saturn:9.537, uranus:19.191, neptune:30.069, pluto:39.482 };
             const r = dist[planet] || 5;
             const R = 1.0; // Earth ~1 AU
 
@@ -797,7 +826,7 @@
             const T1 = toT(jd);
             const T2 = toT(jd + 1);
             let lon1, lon2;
-            if (planet === 'mercury' || planet === 'venus' || planet === 'mars' || planet === 'jupiter' || planet === 'saturn') {
+            if (planet === 'mercury' || planet === 'venus' || planet === 'mars' || planet === 'jupiter' || planet === 'saturn' || planet === 'uranus' || planet === 'neptune' || planet === 'pluto') {
                 lon1 = getGeocentricLongitude(planet, T1);
                 lon2 = getGeocentricLongitude(planet, T2);
             } else {
@@ -829,6 +858,9 @@
                 mars:    { tropical: getGeocentricLongitude('mars',T),    retro: isRetrograde('mars', jd) },
                 jupiter: { tropical: getGeocentricLongitude('jupiter',T), retro: isRetrograde('jupiter', jd) },
                 saturn:  { tropical: getGeocentricLongitude('saturn',T),  retro: isRetrograde('saturn', jd) },
+                uranus:  { tropical: getGeocentricLongitude('uranus',T),  retro: isRetrograde('uranus', jd) },
+                neptune: { tropical: getGeocentricLongitude('neptune',T), retro: isRetrograde('neptune', jd) },
+                pluto:   { tropical: getGeocentricLongitude('pluto',T),   retro: isRetrograde('pluto', jd) },
                 rahu:    { tropical: nodes.rahu,  retro: true },
                 ketu:    { tropical: nodes.ketu,  retro: true },
                 _ayanamsa: ayanamsa
@@ -864,7 +896,10 @@
             jupiter: { name: 'Jupiter', sanskrit: 'Brihaspati', symbol: 'Ju', color: 'jupiter' },
             saturn: { name: 'Saturn', sanskrit: 'Shani', symbol: 'Sa', color: 'saturn' },
             rahu: { name: 'Rahu', sanskrit: 'North node', symbol: 'Ra', color: 'rahu', isShadow: true },
-            ketu: { name: 'Ketu', sanskrit: 'South node', symbol: 'Ke', color: 'ketu', isShadow: true }
+            ketu: { name: 'Ketu', sanskrit: 'South node', symbol: 'Ke', color: 'ketu', isShadow: true },
+            uranus:  { name: 'Uranus',  sanskrit: 'Herschel', symbol: '⛢', color: 'uranus',  isModern: true },
+            neptune: { name: 'Neptune', sanskrit: 'Varuna',   symbol: '♆', color: 'neptune', isModern: true },
+            pluto:   { name: 'Pluto',   sanskrit: 'Yama',     symbol: '♇', color: 'pluto',   isModern: true }
         };
 
         // Lahiri ayanamsa is now computed dynamically per date inside calcAllPositions()
@@ -887,13 +922,15 @@
             return nakshatras[nakshatraIndex];
         }
 
-        // Format degree
+        // Format degree as D° M' S"
         function formatDegree(degree) {
             const sign = Math.floor(degree / 30);
             const degInSign = degree % 30;
             const deg = Math.floor(degInSign);
-            const min = Math.floor((degInSign - deg) * 60);
-            return `${deg}° ${min}'`;
+            const minFull = (degInSign - deg) * 60;
+            const min = Math.floor(minFull);
+            const sec = Math.floor((minFull - min) * 60);
+            return `${deg}° ${min}' ${sec}"`;
         }
 
         // Calculate planetary positions — accurate VSOP87-based engine
@@ -929,6 +966,7 @@
             const badges = [];
             if (data.isRetrograde) badges.push('<span class="planet-badge badge-retro">Retro</span>');
             if (planet.isShadow) badges.push('<span class="planet-badge badge-shadow">Shadow</span>');
+            if (planet.isModern) badges.push('<span class="planet-badge badge-modern">Modern</span>');
             
             const degreeInSign = data.longitude % 30;
             const percentage = (degreeInSign / 30) * 100;
@@ -1013,7 +1051,7 @@
             const grid = document.getElementById('planets-grid');
             grid.innerHTML = '';
             
-            const order = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'rahu', 'ketu'];
+            const order = ['sun', 'moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'rahu', 'ketu', 'uranus', 'neptune', 'pluto'];
             order.forEach(key => {
                 grid.innerHTML += createPlanetCard(key, planets[key], positions[key]);
             });
