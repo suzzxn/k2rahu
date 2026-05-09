@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; background: #050b30; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #canvas { position: relative; width: 900px; height: 900px; }
+        .layer { position: absolute; width: 100%; height: 100%; top: 0; left: 0; transition: transform 1s ease-in-out; }
+        
+        /* The Planet Icons */
+        .planet { position: absolute; top: 50%; left: 50%; transform-origin: center; z-index: 10; }
+        #sun { width: 80px; height: 80px; margin: -40px 0 0 -40px; }
+        #moon { width: 60px; height: 60px; margin: -30px 0 0 -30px; }
+    </style>
+</head>
+<body>
+
+<div id="canvas">
+    <!-- 1. The Rotating Sky (Zodiac + Nakshatras) -->
+    <img src="zodiac_wheel.svg" id="zodiac" class="layer">
+    
+    <!-- 2. The Locked Center (Earth + Rahu + Ketu) -->
+    <img src="center_elements.svg" id="center" class="layer">
+
+    <!-- 3. Dynamic Planets -->
+    <img src="sun.png" id="sun" class="planet">
+    <img src="moon.png" id="moon" class="planet">
+</div>
+
+<script>
+    const CONFIG = {
+        // Current Vedic coordinates provided
+        rahu: { sign: "Aquarius", deg: 11.16 }, // 11° 09' 37"
+        sun:  { totalDeg: 24.18 },              // 24° 11' Aries
+        moon: { totalDeg: 284.12 }              // 14° 07' Capricorn
+    };
+
+    function updateSky() {
+        const zodiac = document.getElementById('zodiac');
+        const sun = document.getElementById('sun');
+        const moon = document.getElementById('moon');
+
+        // Step 1: Calculate wheel offset so Rahu (Top) matches Aquarius 11°
+        // Aquarius starts at 300°. Aquarius 11° is 311.16° total.
+        const aquarius11 = 311.16; 
+        const wheelRotation = -aquarius11; // Rotates the wheel to align 311° to the top
+        zodiac.style.transform = `rotate(${wheelRotation}deg)`;
+
+        // Step 2: Position Sun (Aries 24°)
+        // Radius should match the gap between your Earth and the Zodiac ring
+        const radius = 340; 
+        
+        // Sun Angle: (Sun's absolute degree + Wheel's rotation) - 90 (to adjust CSS 0 top)
+        const sAngle = (CONFIG.sun.totalDeg + wheelRotation - 90) * (Math.PI / 180);
+        sun.style.left = `calc(50% + ${Math.cos(sAngle) * radius}px)`;
+        sun.style.top = `calc(50% + ${Math.sin(sAngle) * radius}px)`;
+
+        // Step 3: Position Moon (Capricorn 14°)
+        const mAngle = (CONFIG.moon.totalDeg + wheelRotation - 90) * (Math.PI / 180);
+        moon.style.left = `calc(50% + ${Math.cos(mAngle) * (radius * 0.75)}px)`;
+        moon.style.top = `calc(50% + ${Math.sin(mAngle) * (radius * 0.75)}px)`;
+    }
+
+    window.onload = updateSky;
+</script>
+</body>
+</html>
